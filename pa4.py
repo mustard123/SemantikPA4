@@ -19,7 +19,6 @@ from nltk.corpus import stopwords
 # 1. LOAD DATA
 ############################################################################################
 
-
 def load_data(file, verbose=True):
     f = open(file, 'r', encoding='utf-8')
     data = []
@@ -260,32 +259,40 @@ if __name__ == '__main__':
     #########################################################################################
 
     # Fit final model on the full train data
-    clf.fit(train_data_featurized, train_labels_featurized)
-    clf2.fit(train_data_all_segments, train_labels_featurized)
+    # clf.fit(train_data_featurized, train_labels_featurized)
+    # clf2.fit(train_data_middle_segment, train_labels_featurized)
     clf3.fit(train_data_middle_segment, train_labels_featurized)
 
     # Predict on test set
+    # Mirko Code
     test_data, test_labels = load_data('test.json.txt', verbose=False)
+    test_data_f = getMiddleSegmentData(test_data, False, True, False)
+    test_label_predicted = clf3.predict(test_data_f)
+    test_label_predicted_recoded = le.inverse_transform(test_label_predicted)
+    with open("prediction_labels_clf3_mirko.txt", "w", encoding="utf-8") as f:
+        for lbl in test_label_predicted_recoded:
+                    f.write(str(lbl) + '\n')
+
+    test_data, test_labels = load_data('test.json.txt', verbose=False)
+    test_data_middle_segment = getMiddleSegmentData(test_data, False, True, False)
+
+
     test_data_featurized = ExractSimpleFeatures(test_data, verbose=False)
     test_label_predicted1 = clf.predict(test_data_featurized)
 
-    train_data_middle_segment = getMiddleSegmentData(train_data, False, True, False)
-    test_label_predicted2 = clf2.predict(train_data_middle_segment)
+    test_data_middle_segment = getMiddleSegmentData(test_data, False, True, False)
+    test_label_predicted2 = clf2.predict(test_data_middle_segment)
 
-    test_data_all_segments = getMiddleSegmentData(train_data, True, True, True)
-    test_label_predicted3 = clf3.predict(test_data_all_segments)
+    test_data_middle_segment = getMiddleSegmentData(test_data, False, True, False)
+    test_label_predicted3 = clf3.predict(test_data_middle_segment)
 
     for t, labels in zip(["clf1", "clf2", "clf3"], [test_label_predicted1, test_label_predicted2, test_label_predicted3]):
-        labels = le.inverse_transform(labels)
-        with open("prediction_labels_"+ t +".txt", "w", encoding="utf-8") as f:
-            for lbl in labels:
+        labels_t = le.inverse_transform(labels)
+        print(t, labels)
+        with open("prediction_labels_clf3.txt", "w", encoding="utf-8") as f:
+            for lbl in labels_t:
                 f.write(str(lbl) + '\n')
-    # Deprecation warning explained: https://stackoverflow.com/questions/49545947/sklearn-deprecationwarning-truth-value-of-an-array
-    # test_label_predicted_decoded = le.inverse_transform(test_label_predicted)
-    # print(test_label_predicted_decoded[:2])
-    # f = open("test_labels.txt", 'w', encoding="utf-8")
-    # for label in test_label_predicted_decoded:
-    #     f.write(label + '\n')
+
 
     print("Top features used to predict: ")
     # show the top features

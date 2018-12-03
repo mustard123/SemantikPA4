@@ -1,2 +1,4 @@
 train.json.txt
 test-covered.json.txt
+.idea/*
+*.txt

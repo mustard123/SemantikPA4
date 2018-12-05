@@ -7,6 +7,9 @@ import json
 from collections import Counter, namedtuple
 from sklearn.metrics import precision_recall_fscore_support, fbeta_score, make_scorer
 from sklearn.model_selection import cross_val_score, StratifiedKFold, KFold
+from sklearn.model_selection import GridSearchCV
+
+import matplotlib.pyplot as plt
 
 def load_data(file, verbose=True):
     PairExample = namedtuple('PairExample', 'entity_1, entity_2, snippet')
@@ -66,11 +69,11 @@ def extractSegments(data, left, middle, right):
         combined_segments = ""
         for snippet in instance.snippet:
             if left:
-                combined_segments += snippet.left
+                combined_segments += snippet.left + " "
             if middle:
-                combined_segments += snippet.middle
+                combined_segments += snippet.middle + " "
             if right:
-                combined_segments += snippet.right
+                combined_segments += snippet.right + " "
         all_segments.append(combined_segments)
     return all_segments
 
@@ -176,3 +179,42 @@ def printNMostInformative(classifier, label_encoder, N, pipeline_preprocessor):
         print("\nClass {} best: ".format(rel))
         for feat in top_features:
             print(feat)
+
+# GridSearch with cross validation
+# verbose can be set to 0 for no prints, 1 for little prints, and 2 for detailed prints
+def gridSearchCV(pipeline, parameters, features, labels, verbose):
+    f_scorer = make_scorer(fbeta_score, beta=0.5, average='macro')
+    gridSearch = GridSearchCV(pipeline, parameters, scoring=f_scorer, cv=5, verbose=verbose)
+    gridSearch.fit(features, labels)
+    means = gridSearch.cv_results_['mean_test_score']
+    stds = gridSearch.cv_results_['std_test_score']
+    parameters = gridSearch.cv_results_['params']
+    print("Best: ")
+    print("%0.3f (+/-%0.03f) for %r" % (means[gridSearch.best_index_], 
+                                        stds[gridSearch.best_index_] * 2, parameters[gridSearch.best_index_]))
+    print("\nGrid: ")
+    for mean, std, params in zip(means, stds, parameters):
+        print("%0.3f (+/-%0.03f) for %r"
+              % (mean, std * 2, params))
+    return gridSearch.best_params_
+
+#plots the most negative and th most positive coefficients
+def plot_pos_neg_extreme_coefficients(classifier, vectorizer, le, top_features=20):
+    class_names = le.classes_
+    for name in class_names:
+        print(name)
+        rel_id = le.transform([name])[0]
+        coef = classifier.named_steps['logisticregression'].coef_[rel_id]
+        feature_names = classifier.named_steps[vectorizer].get_feature_names()
+
+        top_positive_coefficients = np.argsort(coef)[-top_features:]
+        top_negative_coefficients = np.argsort(coef)[:top_features]
+        top_coefficients = np.hstack([top_negative_coefficients, top_positive_coefficients])
+        # create plot
+        plt.figure(figsize=(15, 5))
+        colors = ['red' if c < 0 else 'blue' for c in coef[top_coefficients]]
+        plt.bar(np.arange(2 * top_features), coef[top_coefficients], color=colors)
+
+        feature_names = np.array(feature_names)
+        plt.xticks(np.arange(1, 1 + 2 * top_features), feature_names[top_coefficients], rotation=60, ha='right')
+        plt.show()

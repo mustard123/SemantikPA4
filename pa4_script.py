@@ -67,4 +67,3 @@ if __name__ == '__main__':
     print("Top features used to predict: ")
     #printNMostInformative(clf, le, 3, 'dictvectorizer')
     printNMostInformative(clf3, le, 3, 'tfidfvectorizer')
-    

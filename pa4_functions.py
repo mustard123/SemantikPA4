@@ -217,4 +217,5 @@ def plot_pos_neg_extreme_coefficients(classifier, vectorizer, le, top_features=2
 
         feature_names = np.array(feature_names)
         plt.xticks(np.arange(1, 1 + 2 * top_features), feature_names[top_coefficients], rotation=60, ha='right')
+        plt.title(name)
         plt.show()

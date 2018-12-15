@@ -3,10 +3,10 @@ This file contains only the best classifier. Consult PA4_script.ipynb for the di
 Both files laod all their functions from pa4_functions.py. 
 
 Use this file as follows: 
-python pa4_script.py "path_to_train" "path_to_test" "name_of_prediction_file"
+python pa4_script.py "path_to_train" "path_to_test" "name_of_prediction_file" "path_to_gold_standard"
 
 If no arguments are provided it defaults to:
-python pa4_script.py "train.json.txt" "test.json.txt" "predictions.txt"
+python pa4_script.py "train.json.txt" "test.json.txt" "predictions.txt" "test_labeled.json.txt"
 """
 
 from sklearn.feature_extraction import DictVectorizer
@@ -18,9 +18,11 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from nltk.corpus import stopwords
 import sys
+from sklearn.metrics import classification_report
 
 from pa4_functions import load_data, print_stats, ExractSimpleFeatures, extractSegments, evaluateCV
 from pa4_functions import evaluateCV_check, printLabelsToFile, printNMostInformative, gridSearchCV, plot_pos_neg_extreme_coefficients
+from pa4_functions import *
 
 def useClassifier(clf, encoder, train_features, train_labels, test_features, filename):
     avg = evaluateCV(clf, encoder, train_features, train_labels)
@@ -37,16 +39,20 @@ if __name__ == '__main__':
     path_to_train = None
     path_to_test = None
     path_to_predictions = None
+    path_to_gold_standard = None
     if sys.argv and len(sys.argv) > 2:
         path_to_train = sys.argv[1]
         path_to_test = sys.argv[2]
         path_to_predictions = sys.argv[3]
+        path_to_gold_standard = sys.argv[4]
     if not path_to_train:
         path_to_train = 'train.json.txt'
     if not path_to_test:
         path_to_test = 'test.json.txt'
     if not path_to_predictions:
         path_to_predictions = 'predictions.txt'
+    if not path_to_gold_standard:
+        path_to_gold_standard = 'test_labeled.json.txt'
 
     ###########################################################################################
     # 2. LOAD DATA
@@ -97,3 +103,8 @@ if __name__ == '__main__':
 
     print("The following are more detailed graphs of the most positive and the most negative features for the Regression: ")
     plot_pos_neg_extreme_coefficients(clf, 'countvectorizer', le)
+
+    gold_standard_labels = get_gold_standard_labels(path_to_gold_standard)
+    our_predictions_labels = get_predicted_labels(path_to_predictions)
+
+    print(classification_report(gold_standard_labels, our_predictions_labels))

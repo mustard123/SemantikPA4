@@ -219,3 +219,18 @@ def plot_pos_neg_extreme_coefficients(classifier, vectorizer, le, top_features=2
         plt.xticks(np.arange(1, 1 + 2 * top_features), feature_names[top_coefficients], rotation=60, ha='right')
         plt.title(name)
         plt.show()
+
+
+def get_gold_standard_labels(path_to_gold_standard):
+    data, gold_standard_labels = load_data(path_to_gold_standard, verbose=False)
+    return gold_standard_labels
+
+
+def get_predicted_labels(path_to_prediction_file):
+    with open(path_to_prediction_file) as f:
+        content = f.readlines()
+    labels = [line.strip() for line in content]
+    return labels
+
+
+
